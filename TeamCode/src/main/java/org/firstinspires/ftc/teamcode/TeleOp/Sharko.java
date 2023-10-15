@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
+import com.acmerobotics.dashboard.config.Config;
+
 import com.github.i_n_t_robotics.zhonyas.navx.AHRS;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -11,6 +13,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDir
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.teamcode.Constants.Vision;
+import org.firstinspires.ftc.teamcode.Constants.Drive;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -18,21 +22,10 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@Config
 public class Sharko extends OpMode {
 
     // APRIL TAG
-    final double DESIRED_DISTANCE = 12.0;
-
-    final double SPEED_GAIN  =  0.03;
-    final double STRAFE_GAIN =  0.015;
-    final double TURN_GAIN   =  0.04;
-
-    final double MAX_AUTO_SPEED = 0.8;
-    final double MAX_AUTO_STRAFE= 0.7;
-    final double MAX_AUTO_TURN  = 0.3;
-
-    private static final boolean USE_WEBCAM = true;
-    private static final int DESIRED_TAG_ID = 4;
     private VisionPortal visionPortal;
     private AprilTagProcessor aprilTag;
     private AprilTagDetection desiredTag;
@@ -47,21 +40,21 @@ public class Sharko extends OpMode {
     private AHRS imu;
 
     public void init() {
-        frontLeftMotor = hardwareMap.dcMotor.get("frontLeft");
-        backLeftMotor = hardwareMap.dcMotor.get("backLeft");
-        frontRightMotor = hardwareMap.dcMotor.get("backRight");
-        backRightMotor = hardwareMap.dcMotor.get("frontRight");
+        frontLeftMotor = hardwareMap.dcMotor.get(Drive.FRONT_LEFT);
+        backLeftMotor = hardwareMap.dcMotor.get(Drive.BACK_LEFT);
+        frontRightMotor = hardwareMap.dcMotor.get(Drive.FRONT_RIGHT);
+        backRightMotor = hardwareMap.dcMotor.get(Drive.BACK_RIGHT);
 
         //TODO: Change this to left and fix joystick inversion
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
+        imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, Drive.IMU),
                 AHRS.DeviceDataType.kProcessedData);
 
         initAprilTag();
 
-        if (USE_WEBCAM) {
+        if (Vision.USE_WEBCAM) {
             try {
                 setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
             } catch (InterruptedException e) {
@@ -87,7 +80,7 @@ public class Sharko extends OpMode {
             // Look to see if we have size info on this tag.
             if (detection.metadata != null) {
                 //  Check to see if we want to track towards this tag.
-                if ((DESIRED_TAG_ID < 0) || (detection.id == DESIRED_TAG_ID)) {
+                if ((Vision.DESIRED_TAG_ID < 0) || (detection.id == Vision.DESIRED_TAG_ID)) {
                     // Yes, we want to use this tag.
                     targetFound = true;
                     desiredTag = detection;
@@ -141,14 +134,13 @@ public class Sharko extends OpMode {
         backRightMotor.setPower(backRightPower);
 
         if (gamepad1.left_bumper && targetFound) {
-            double  rangeError      = (desiredTag.ftcPose.range - DESIRED_DISTANCE);
+            double  rangeError      = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
             double  headingError    = desiredTag.ftcPose.bearing;
             double  yawError        = desiredTag.ftcPose.yaw;
 
-            // Use the speed and turn "gains" to calculate how we want the robot to move.
-            drive  = Range.clip(-rangeError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-            turn   = Range.clip(-headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
-            strafe = Range.clip(yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+            drive  = Range.clip(-rangeError * Vision.SPEED_GAIN, -Vision.MAX_AUTO_SPEED, Vision.MAX_AUTO_SPEED);
+            turn   = Range.clip(-headingError * Vision.TURN_GAIN, -Vision.MAX_AUTO_TURN, Vision.MAX_AUTO_TURN) ;
+            strafe = Range.clip(yawError * Vision.STRAFE_GAIN, -Vision.MAX_AUTO_STRAFE, Vision.MAX_AUTO_STRAFE);
 
             telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
 
@@ -193,7 +185,7 @@ public class Sharko extends OpMode {
         aprilTag.setDecimation(2);
 
         // Create the vision portal by using a builder.
-        if (USE_WEBCAM) {
+        if (Vision.USE_WEBCAM) {
             visionPortal = new VisionPortal.Builder()
                     .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                     .addProcessor(aprilTag)
@@ -207,8 +199,6 @@ public class Sharko extends OpMode {
     }
 
     private void setManualExposure(int exposureMS, int gain) throws InterruptedException {
-        // Wait for the camera to be open, then use the controls
-
         if (visionPortal == null) {
             return;
         }
@@ -228,11 +218,10 @@ public class Sharko extends OpMode {
             exposureControl.setMode(ExposureControl.Mode.Manual);
 
         }
+        //TODO: Worthless cast, try removing
         exposureControl.setExposure((long)exposureMS, TimeUnit.MILLISECONDS);
 
         GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
         gainControl.setGain(gain);
-
-
     }
 }
