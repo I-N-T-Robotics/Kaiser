@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode
 
 import com.acmerobotics.roadrunner.MecanumKinematics
 
-class Constants {
+object Constants {
     object Drive {
         //TODO: THIS IS FOR DYLANS ROBOT, CHANGE FOR KAISER
         const val FRONT_LEFT = "frontLeft"
@@ -11,6 +11,33 @@ class Constants {
         const val BACK_RIGHT = "frontRight"
 
         const val IMU = "navx"
+
+        object PARAMS {
+            // Drive Model
+            const val inPerTick = 0.000753;
+            const val lateralInPerTick = -0.0005325981543257096;
+            const val trackWidthTicks = 17375.305;
+
+            // FF Values (ticks)
+            const val kS = 0.8667242003254163;
+            const val kV = 0.00015132445220638116;
+            const val kA = 0.00005;
+
+            //TODO See if these are even needed ngl
+            const val maxWheelVel = 50;
+            const val minProfileAccel = -30;
+            const val maxProfileAccel = 50;
+
+            const val maxAngVel = Math.PI; // shared with path
+            const val maxAngAccel = Math.PI;
+
+            const val axialGain = 6.0;
+            const val lateralGain = 4.0;
+            const val headingGain = 10.0; // shared with turn
+            const val axialVelGain = 0.0;
+            const val lateralVelGain = 0.0;
+            const val headingVelGain = 0.0; // shared with turn
+        }
     }
 
     object Vision {
