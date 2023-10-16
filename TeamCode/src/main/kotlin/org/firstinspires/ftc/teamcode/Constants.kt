@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode
 
-import com.acmerobotics.roadrunner.MecanumKinematics
-
 object Constants {
     object Drive {
         //TODO: THIS IS FOR DYLANS ROBOT, CHANGE FOR KAISER
@@ -12,32 +10,38 @@ object Constants {
 
         const val IMU = "navx"
 
-        object PARAMS {
-            // Drive Model
-            const val inPerTick = 0.000753;
-            const val lateralInPerTick = -0.0005325981543257096;
-            const val trackWidthTicks = 17375.305;
+        class PARAMS {
+            companion object {
+                // Drive Model
+                @JvmField var inPerTick: Double = 0.000753
+                @JvmField var lateralInPerTick: Double = -0.0005325981543257096
+                @JvmField var trackWidthTicks: Double = 17375.305
+                
+                // FF Values (ticks)
+                @JvmField var kS: Double = 0.8667242003254163
+                @JvmField var kV: Double = 0.00015132445220638116
+                @JvmField var kA: Double = 0.00005
+                
+                // Path params (inches)
+                @JvmField var maxWheelVel: Double = 50.0
+                @JvmField var minProfileAccel: Double = -30.0
+                @JvmField var maxProfileAccel: Double = 50.0
+                
+                // Turn profile parameters (in radians)
+                @JvmField var maxAngVel: Double = Math.PI // shared with path
+                @JvmField var maxAngAccel: Double = Math.PI
 
-            // FF Values (ticks)
-            const val kS = 0.8667242003254163;
-            const val kV = 0.00015132445220638116;
-            const val kA = 0.00005;
-
-            //TODO See if these are even needed ngl
-            const val maxWheelVel = 50;
-            const val minProfileAccel = -30;
-            const val maxProfileAccel = 50;
-
-            const val maxAngVel = Math.PI; // shared with path
-            const val maxAngAccel = Math.PI;
-
-            const val axialGain = 6.0;
-            const val lateralGain = 4.0;
-            const val headingGain = 10.0; // shared with turn
-            const val axialVelGain = 0.0;
-            const val lateralVelGain = 0.0;
-            const val headingVelGain = 0.0; // shared with turn
+                // Path PID Values
+                @JvmField var axialGain: Double = 6.0
+                @JvmField var lateralGain: Double = 4.0
+                @JvmField var headingGain: Double = 10.0 // shared with turn
+                @JvmField var axialVelGain: Double = 0.0
+                @JvmField var lateralVelGain: Double = 0.0
+                @JvmField var headingVelGain: Double = 0.0 // shared with turn
+            }
+            
         }
+
     }
 
     object Vision {
