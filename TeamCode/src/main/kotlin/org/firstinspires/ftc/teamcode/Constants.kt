@@ -1,5 +1,13 @@
 package org.firstinspires.ftc.teamcode
 
+import com.acmerobotics.roadrunner.AngularVelConstraint
+import com.acmerobotics.roadrunner.MecanumKinematics
+import com.acmerobotics.roadrunner.MinVelConstraint
+import com.acmerobotics.roadrunner.MotorFeedforward
+import com.acmerobotics.roadrunner.ProfileAccelConstraint
+import com.acmerobotics.roadrunner.TurnConstraints
+import java.util.Arrays
+
 object Constants {
     object Drive {
         //TODO: THIS IS FOR DYLANS ROBOT, CHANGE FOR KAISER
@@ -42,6 +50,20 @@ object Constants {
             
         }
 
+
+        @JvmField val kinematics = MecanumKinematics(
+                PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick)
+
+        @JvmField val feedforward = MotorFeedforward(PARAMS.kS, PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick);
+
+        @JvmField val defaultTurnConstraints = TurnConstraints(
+                PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
+        //TODO might also be a problem
+        @JvmField val defaultVelConstraint = MinVelConstraint(Arrays.asList(
+                kinematics.WheelVelConstraint(PARAMS.maxWheelVel),
+                AngularVelConstraint(PARAMS.maxAngVel)
+        ))
+        @JvmField val defaultAccelConstraint = ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
     }
 
     object Vision {

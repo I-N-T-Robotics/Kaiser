@@ -7,23 +7,17 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.*;
-import com.acmerobotics.roadrunner.AngularVelConstraint;
 import com.acmerobotics.roadrunner.DualNum;
 import com.acmerobotics.roadrunner.HolonomicController;
 import com.acmerobotics.roadrunner.MecanumKinematics;
-import com.acmerobotics.roadrunner.MinVelConstraint;
-import com.acmerobotics.roadrunner.MotorFeedforward;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Pose2dDual;
-import com.acmerobotics.roadrunner.ProfileAccelConstraint;
 import com.acmerobotics.roadrunner.Time;
 import com.acmerobotics.roadrunner.TimeTrajectory;
 import com.acmerobotics.roadrunner.TimeTurn;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
-import com.acmerobotics.roadrunner.TurnConstraints;
 import com.acmerobotics.roadrunner.Twist2dDual;
 import com.acmerobotics.roadrunner.Vector2d;
-import com.acmerobotics.roadrunner.VelConstraint;
 import com.acmerobotics.roadrunner.ftc.Encoder;
 import com.acmerobotics.roadrunner.ftc.FlightRecorder;
 import com.acmerobotics.roadrunner.ftc.LynxFirmware;
@@ -40,31 +34,15 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.Constants;
+import org.firstinspires.ftc.teamcode.Constants.Drive;
 import org.firstinspires.ftc.teamcode.Constants.Drive.PARAMS;
 
 import java.lang.Math;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 @Config
 public class DriveTrain {
-
-    public final MecanumKinematics kinematics = new MecanumKinematics(
-            PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
-
-    public final MotorFeedforward feedforward = new MotorFeedforward(PARAMS.kS, PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick);
-
-    public final TurnConstraints defaultTurnConstraints = new TurnConstraints(
-            PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
-    public final VelConstraint defaultVelConstraint =
-            new MinVelConstraint(Arrays.asList(
-                    kinematics.new WheelVelConstraint(PARAMS.maxWheelVel),
-                    new AngularVelConstraint(PARAMS.maxAngVel)
-            ));
-    public final AccelConstraint defaultAccelConstraint =
-            new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
 
@@ -109,7 +87,7 @@ public class DriveTrain {
             Rotation2d heading = Rotation2d.exp(imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
             double headingDelta = heading.minus(lastHeading);
 
-            Twist2dDual<Time> twist = kinematics.forward(new MecanumKinematics.WheelIncrements<>(
+            Twist2dDual<Time> twist = Drive.kinematics.forward(new MecanumKinematics.WheelIncrements<>(
                     new DualNum<Time>(new double[]{
                             (leftFrontPosVel.position - lastLeftFrontPos),
                             leftFrontPosVel.velocity,
@@ -151,10 +129,10 @@ public class DriveTrain {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
-        leftFront = hardwareMap.get(DcMotorEx.class, "frontLeft");
-        leftBack = hardwareMap.get(DcMotorEx.class, "backLeft");
-        rightBack = hardwareMap.get(DcMotorEx.class, "frontRight");
-        rightFront = hardwareMap.get(DcMotorEx.class, "backRight");
+        leftFront = hardwareMap.get(DcMotorEx.class, Drive.FRONT_LEFT);
+        leftBack = hardwareMap.get(DcMotorEx.class, Drive.BACK_LEFT);
+        rightBack = hardwareMap.get(DcMotorEx.class, Drive.BACK_RIGHT);
+        rightFront = hardwareMap.get(DcMotorEx.class, Drive.BACK_LEFT);
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -244,12 +222,12 @@ public class DriveTrain {
             )
                     .compute(txWorldTarget, pose, robotVelRobot);
 
-            MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
+            MecanumKinematics.WheelVelocities<Time> wheelVels = Drive.kinematics.inverse(command);
             double voltage = voltageSensor.getVoltage();
-            leftFront.setPower(feedforward.compute(wheelVels.leftFront) / voltage);
-            leftBack.setPower(feedforward.compute(wheelVels.leftBack) / voltage);
-            rightBack.setPower(feedforward.compute(wheelVels.rightBack) / voltage);
-            rightFront.setPower(feedforward.compute(wheelVels.rightFront) / voltage);
+            leftFront.setPower(Drive.feedforward.compute(wheelVels.leftFront) / voltage);
+            leftBack.setPower(Drive.feedforward.compute(wheelVels.leftBack) / voltage);
+            rightBack.setPower(Drive.feedforward.compute(wheelVels.rightBack) / voltage);
+            rightFront.setPower(Drive.feedforward.compute(wheelVels.rightFront) / voltage);
 
             FlightRecorder.write("TARGET_POSE", new PoseMessage(txWorldTarget.value()));
 
@@ -325,12 +303,12 @@ public class DriveTrain {
             )
                     .compute(txWorldTarget, pose, robotVelRobot);
 
-            MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
+            MecanumKinematics.WheelVelocities<Time> wheelVels = Drive.kinematics.inverse(command);
             double voltage = voltageSensor.getVoltage();
-            leftFront.setPower(feedforward.compute(wheelVels.leftFront) / voltage);
-            leftBack.setPower(feedforward.compute(wheelVels.leftBack) / voltage);
-            rightBack.setPower(feedforward.compute(wheelVels.rightBack) / voltage);
-            rightFront.setPower(feedforward.compute(wheelVels.rightFront) / voltage);
+            leftFront.setPower(Drive.feedforward.compute(wheelVels.leftFront) / voltage);
+            leftBack.setPower(Drive.feedforward.compute(wheelVels.leftBack) / voltage);
+            rightBack.setPower(Drive.feedforward.compute(wheelVels.rightBack) / voltage);
+            rightFront.setPower(Drive.feedforward.compute(wheelVels.rightFront) / voltage);
 
             FlightRecorder.write("TARGET_POSE", new PoseMessage(txWorldTarget.value()));
 
@@ -404,8 +382,8 @@ public class DriveTrain {
                 TurnAction::new,
                 FollowTrajectoryAction::new,
                 beginPose, 1e-6, 0.0,
-                defaultTurnConstraints,
-                defaultVelConstraint, defaultAccelConstraint,
+                Drive.defaultTurnConstraints,
+                Drive.defaultVelConstraint, Drive.defaultAccelConstraint,
                 0.25, 0.1
         );
     }
