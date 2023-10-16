@@ -20,6 +20,7 @@ object Constants {
 
         class PARAMS {
             companion object {
+                //TODO: Again, literally everything has to be tuned to OUR robot
                 // Drive Model
                 @JvmField var inPerTick: Double = 0.000753
                 @JvmField var lateralInPerTick: Double = -0.0005325981543257096
@@ -61,16 +62,16 @@ object Constants {
         @JvmField val kinematics = MecanumKinematics(
                 PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick)
 
-        @JvmField val feedforward = MotorFeedforward(PARAMS.kS, PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick);
+        @JvmField val feedforward = MotorFeedforward(PARAMS.kS, PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick)
 
         @JvmField val defaultTurnConstraints = TurnConstraints(
-                PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
+                PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel)
         //TODO might also be a problem
         @JvmField val defaultVelConstraint = MinVelConstraint(Arrays.asList(
                 kinematics.WheelVelConstraint(PARAMS.maxWheelVel),
                 AngularVelConstraint(PARAMS.maxAngVel)
         ))
-        @JvmField val defaultAccelConstraint = ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
+        @JvmField val defaultAccelConstraint = ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel)
     }
 
     object Vision {
