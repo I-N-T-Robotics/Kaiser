@@ -50,6 +50,13 @@ object Constants {
             
         }
 
+        class TDWParams {
+            @JvmField var par0YTicks: Double = -7883.0 // y position of the first parallel encoder (in tick units)
+            @JvmField var par1YTicks: Double = 7999.1 // y position of the second parallel encoder (in tick units)
+            @JvmField var perpXTicks: Double = 7387.25 // x position of the perpendicular encoder (in tick units)
+
+        }
+
 
         @JvmField val kinematics = MecanumKinematics(
                 PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick)

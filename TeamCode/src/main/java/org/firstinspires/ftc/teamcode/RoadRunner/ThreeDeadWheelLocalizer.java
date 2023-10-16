@@ -14,21 +14,18 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.Constants.Drive.TDWParams;
+
 @Config
 public final class ThreeDeadWheelLocalizer implements Localizer {
-    public static class Params {
-        public double par0YTicks = -7883.0; // y position of the first parallel encoder (in tick units)
-        public double par1YTicks = 7999.1; // y position of the second parallel encoder (in tick units)
-        public double perpXTicks = 7387.25; // x position of the perpendicular encoder (in tick units)
-    }
-
-    public static Params PARAMS = new Params();
 
     public final Encoder par0, par1, perp;
 
     public final double inPerTick;
 
     private int lastPar0Pos, lastPar1Pos, lastPerpPos;
+
+    private TDWParams PARAMS = new TDWParams();
 
     public ThreeDeadWheelLocalizer(HardwareMap hardwareMap, double inPerTick) {
         par0 = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "frontLeft")));
