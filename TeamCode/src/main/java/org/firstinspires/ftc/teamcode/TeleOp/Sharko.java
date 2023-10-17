@@ -33,14 +33,10 @@ public class Sharko extends OpMode {
     private AprilTagDetection desiredTag;
 
     // DRIVETRAIN MOTOR DECLARATIONS
-    public DcMotor frontLeftMotor;
-    public DcMotor backLeftMotor;
-    public DcMotor frontRightMotor;
-    public DcMotor backRightMotor;
+    public DcMotor frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor;
 
     // MITSUMI MOTOR AND SERVO DECLARE
-    public DcMotorEx LIFT_1;
-    public DcMotorEx LIFT_2;
+    public DcMotorEx LIFT_1, LIFT_2;
 
     // NAVX DECLARATION
     private AHRS imu;
