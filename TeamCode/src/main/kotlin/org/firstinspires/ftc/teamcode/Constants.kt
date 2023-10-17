@@ -74,6 +74,11 @@ object Constants {
         @JvmField val defaultAccelConstraint = ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel)
     }
 
+    object Lift {
+        const val LIFT_1 = "Lift 1"
+        const val LIFT_2 = "Lift 2"
+    }
+
     object Vision {
         const val DESIRED_DISTANCE = 12.0
         const val DESIRED_TAG_ID = 4

@@ -6,6 +6,7 @@ import com.github.i_n_t_robotics.zhonyas.navx.AHRS;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.Range;
 
@@ -13,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDir
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.teamcode.Constants.Lift;
 import org.firstinspires.ftc.teamcode.Constants.Vision;
 import org.firstinspires.ftc.teamcode.Constants.Drive;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -30,11 +32,15 @@ public class Sharko extends OpMode {
     private AprilTagProcessor aprilTag;
     private AprilTagDetection desiredTag;
 
-    // MOTOR DECLARATIONS
+    // DRIVETRAIN MOTOR DECLARATIONS
     public DcMotor frontLeftMotor;
     public DcMotor backLeftMotor;
     public DcMotor frontRightMotor;
     public DcMotor backRightMotor;
+
+    // MITSUMI MOTOR AND SERVO DECLARE
+    public DcMotorEx LIFT_1;
+    public DcMotorEx LIFT_2;
 
     // NAVX DECLARATION
     private AHRS imu;
@@ -45,9 +51,23 @@ public class Sharko extends OpMode {
         frontRightMotor = hardwareMap.dcMotor.get(Drive.FRONT_RIGHT);
         backRightMotor = hardwareMap.dcMotor.get(Drive.BACK_RIGHT);
 
+        LIFT_1 = hardwareMap.get(DcMotorEx.class, Lift.LIFT_1);
+        LIFT_2 = hardwareMap.get(DcMotorEx.class, Lift.LIFT_2);
+
         //TODO: Change this to left and fix joystick inversion
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        LIFT_1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        LIFT_2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        LIFT_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        LIFT_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, Drive.IMU),
                 AHRS.DeviceDataType.kProcessedData);
