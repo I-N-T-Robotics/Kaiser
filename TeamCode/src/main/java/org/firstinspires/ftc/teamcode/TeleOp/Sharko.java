@@ -2,12 +2,16 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.acmerobotics.dashboard.config.Config;
 
+import com.arcrobotics.ftclib.controller.PIDController;
 import com.github.i_n_t_robotics.zhonyas.navx.AHRS;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
@@ -25,15 +29,18 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Config
+@TeleOp
 public class Sharko extends OpMode {
 
     // APRIL TAG
-    private VisionPortal visionPortal;
+    /* private VisionPortal visionPortal;
     private AprilTagProcessor aprilTag;
-    private AprilTagDetection desiredTag;
+    private AprilTagDetection desiredTag; */
 
     // DRIVETRAIN MOTOR DECLARATIONS
     public DcMotor frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor;
+
+    public CRServo ARM_1, ARM_2;
 
     // MITSUMI MOTOR AND SERVO DECLARE
     public DcMotorEx LIFT_1, LIFT_2;
@@ -41,21 +48,28 @@ public class Sharko extends OpMode {
     // NAVX DECLARATION
     private AHRS imu;
 
+    private PIDController controller;
+
+    private double setPositionTop = -530;
+
     public void init() {
         frontLeftMotor = hardwareMap.dcMotor.get(Drive.FRONT_LEFT);
         backLeftMotor = hardwareMap.dcMotor.get(Drive.BACK_LEFT);
         frontRightMotor = hardwareMap.dcMotor.get(Drive.FRONT_RIGHT);
         backRightMotor = hardwareMap.dcMotor.get(Drive.BACK_RIGHT);
 
+
         LIFT_1 = hardwareMap.get(DcMotorEx.class, Lift.LIFT_1);
         LIFT_2 = hardwareMap.get(DcMotorEx.class, Lift.LIFT_2);
 
         //TODO: Change this to left and fix joystick inversion
-        frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        LIFT_1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        LIFT_2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        LIFT_2.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        LIFT_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        LIFT_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -65,29 +79,56 @@ public class Sharko extends OpMode {
         LIFT_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         LIFT_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, Drive.IMU),
+        ARM_1 = hardwareMap.crservo.get("ARM 1");
+        ARM_2 = hardwareMap.crservo.get("ARM 2");
+
+        ARM_2.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+        imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
                 AHRS.DeviceDataType.kProcessedData);
 
-        initAprilTag();
+        controller = new PIDController(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
 
-        if (Vision.USE_WEBCAM) {
+        // initAprilTag();
+
+        /* if (Vision.USE_WEBCAM) {
             try {
                 setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        }
+        } */
 
     }
 
     boolean targetFound = false;
-    double  drive = 0;
-    double  strafe = 0;
-    double  turn = 0;
+    double drive = 0;
+    double strafe = 0;
+    double turn = 0;
 
     public void loop() {
+        double liftPosition = LIFT_1.getCurrentPosition();
+        double outputTop = controller.calculate(liftPosition, setPositionTop);
+        double outputGround = controller.calculate(liftPosition, -50);
+        boolean atTop = Math.abs(setPositionTop - liftPosition) < 10;
+
+        if (gamepad1.dpad_up) {
+            LIFT_1.setPower(outputTop * 0.6);
+            LIFT_2.setPower(outputTop * 0.6);
+        }
+
+        if (gamepad1.dpad_down) {
+            LIFT_1.setPower(outputGround * 0.005);
+            LIFT_2.setPower(outputGround * 0.005);
+        }
+
+        if (gamepad1.a) {
+
+        }
+
         ///////////////// APRILTAG SETUP /////////////////
-        targetFound = false;
+        /* targetFound = false;
         desiredTag  = null;
 
         // Step through the list of detected tags and look for a matching tag
@@ -119,12 +160,12 @@ public class Sharko extends OpMode {
             telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
         } else {
             telemetry.addData("\n>","Drive using joysticks to find valid target\n");
-        }
+        } */
 
         ///////////////// FCD SETUP /////////////////
-        double y = gamepad1.left_stick_y; // Remember, Y stick value is reversed
-        double x = -gamepad1.left_stick_x;
-        double rx = -gamepad1.right_stick_x;
+        double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
+        double x = gamepad1.left_stick_x;
+        double rx = gamepad1.right_stick_x;
 
         if (gamepad1.options) {
             imu.zeroYaw();
@@ -149,7 +190,7 @@ public class Sharko extends OpMode {
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
 
-        if (gamepad1.left_bumper && targetFound) {
+        /* if (gamepad1.left_bumper && targetFound) {
             double  rangeError      = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
             double  headingError    = desiredTag.ftcPose.bearing;
             double  yawError        = desiredTag.ftcPose.yaw;
@@ -182,13 +223,14 @@ public class Sharko extends OpMode {
             frontRightMotor.setPower(rightFrontPower);
             backLeftMotor.setPower(leftBackPower);
             backRightMotor.setPower(rightBackPower);
-        }
+        } */
 
         telemetry.update();
 
     }
+}
 
-    private void initAprilTag() {
+    /* private void initAprilTag() {
         aprilTag = new AprilTagProcessor.Builder().build();
 
         // Adjust Image Decimation to trade-off detection-range for detection-rate.
@@ -239,5 +281,5 @@ public class Sharko extends OpMode {
 
         GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
         gainControl.setGain(gain);
-    }
-}
+    } */
+

@@ -12,9 +12,9 @@ object Constants {
     object Drive {
         //TODO: THIS IS FOR DYLANS ROBOT, CHANGE FOR KAISER
         const val FRONT_LEFT = "frontLeft"
-        const val FRONT_RIGHT = "backRight"
+        const val FRONT_RIGHT = "frontRight"
         const val BACK_LEFT = "backLeft"
-        const val BACK_RIGHT = "frontRight"
+        const val BACK_RIGHT = "backRight"
 
         const val IMU = "navx"
 
@@ -77,8 +77,11 @@ object Constants {
     object Lift {
         const val LIFT_1 = "Lift 1"
         const val LIFT_2 = "Lift 2"
-    }
 
+        const val ARM_P = 0.05
+        const val ARM_I = 0
+        const val ARM_D = 0
+    }
     object Vision {
         const val DESIRED_DISTANCE = 12.0
         const val DESIRED_TAG_ID = 4
