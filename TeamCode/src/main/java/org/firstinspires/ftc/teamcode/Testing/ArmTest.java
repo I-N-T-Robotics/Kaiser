@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode.Testing;
 
 import com.acmerobotics.dashboard.config.Config;
+
 import com.arcrobotics.ftclib.controller.PIDController;
+import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -20,9 +22,8 @@ import org.firstinspires.ftc.teamcode.Constants.Lift;
 @TeleOp(name = "Arm testing", group = "TeleOp Tests")
 public class ArmTest extends OpMode {
 
-    public DcMotorEx LIFT_1, LIFT_2;
+    public Motor LIFT_1, LIFT_2;
     public Servo ARM_1, ARM_2, pivot;
-    public AnalogInput armEncoderLeft, armEncoderRight, pivotEncoder;
 
     private PIDController controller;
     private PIDController armController;
@@ -33,78 +34,72 @@ public class ArmTest extends OpMode {
     private double lowArmL = 119;
     private double lowArmR = -370;
 
-    int target = -50;
+    int target = 0;
 
     @Override
     public void init() {
-        LIFT_1 = hardwareMap.get(DcMotorEx.class, Lift.LIFT_1);
-        LIFT_2 = hardwareMap.get(DcMotorEx.class, Lift.LIFT_2);
+        LIFT_1 = new Motor(hardwareMap, Lift.LIFT_1);
+        LIFT_2 = new Motor(hardwareMap, Lift.LIFT_2);
 
-        LIFT_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        LIFT_2.setInverted(true);
 
-        LIFT_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        LIFT_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
-        LIFT_1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        LIFT_2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        LIFT_1.setPositionPIDFCoefficients(3.5);
-        LIFT_2.setPositionPIDFCoefficients(3.5);
-        LIFT_1.setTargetPositionTolerance(10);
-        LIFT_2.setTargetPositionTolerance(10);
+        LIFT_1.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        LIFT_2.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
 
         ARM_1 = hardwareMap.servo.get("ARM 1");
         ARM_2 = hardwareMap.servo.get("ARM 2");
         pivot = hardwareMap.servo.get("pivot");
 
-        ARM_1.setPosition(0.5);
-        ARM_2.setPosition(0.5);
+        ARM_1.setPosition(0);
+        ARM_2.setPosition(0);
 
-        armEncoderLeft = hardwareMap.get(AnalogInput.class, "leftArmEncoder");
-        armEncoderRight = hardwareMap.get(AnalogInput.class, "rightArmEncoder");
-
+        ARM_2.setDirection(Servo.Direction.REVERSE);
 
         controller = new PIDController(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
-        controller.setSetPoint(setPosition);
+        controller.setSetPoint(-400);
 
         armController = new PIDController(0.1, 0, 0);
+
+        LIFT_1.setPositionCoefficient(0.1);
+        LIFT_1.setTargetPosition(-400);
+        LIFT_1.setPositionTolerance(10);
+
     }
 
     @Override
     public void loop() {
-        LIFT_1.setTargetPosition(target);
-        LIFT_2.setTargetPosition(target);
-        LIFT_1.setPower(1);
-        LIFT_2.setPower(1);
-        LIFT_1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        LIFT_2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        LIFT_1.setRunMode(Motor.RunMode.PositionControl);
 
         double  liftPosition = LIFT_1.getCurrentPosition();
         double output = controller.calculate(liftPosition, setPosition);
 
-        double leftArmPos = armEncoderLeft.getVoltage() / 3.3 * 360;
-        double rightArmPos = armEncoderRight.getVoltage() / 3.3 * 360;
+//        double leftArmPos = armEncoderLeft.getVoltage() / 3.3 * 360;
+//        double rightArmPos = armEncoderRight.getVoltage() / 3.3 * 360;
 
-        double outputTop = controller.calculate(liftPosition, -500);
-        double outputGround = controller.calculate(liftPosition, -50);
+        double outputTop = controller.calculate(liftPosition, -400);
+        double outputGround = controller.calculate(liftPosition, -100);
 
         if (gamepad1.dpad_up) {
-            target = -500;
+       LIFT_1.set(0.5);
+           // LIFT_2.setVelocity(outputTop);
         }
-
         if (gamepad1.dpad_down) {
-            target = -50;
+          //  LIFT_2.setVelocity(outputGround);
         }
 
-
-
+        if (gamepad1.a) {
+            ARM_2.setPosition(0.6);
+            ARM_1.setPosition(0.6);
+        } else if (gamepad1.b) {
+            ARM_1.setPosition(0);
+            ARM_2.setPosition(0);
+        }
 
 
         telemetry.addData("LIFT 1 TICKS:", LIFT_1.getCurrentPosition());
         telemetry.addData("LIFT 2 TICKS:", LIFT_2.getCurrentPosition());
-        telemetry.addData("ARM 1 POS", armEncoderLeft.getVoltage() / 3.3 * 360);
-        telemetry.addData("ARM 2 POS", (armEncoderRight.getVoltage() / 3.3 * 360));
-       // telemetry.addData("pivot pos", pivotEncoder.getVoltage() / 3.3 * 360);
+
     }
 }
