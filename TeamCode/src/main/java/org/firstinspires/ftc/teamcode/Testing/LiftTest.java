@@ -13,8 +13,10 @@ import org.firstinspires.ftc.teamcode.Constants;
 
 @TeleOp
 @Config
-public class NewTest extends OpMode {
-    private PIDController controller;
+public class LiftTest extends OpMode {
+
+    private DcMotorEx LIFT_1;
+    private DcMotorEx LIFT_2;
 
     public static double p = 0.09, i = 0.04, d = 0.0007225, f = 0.432;
 
@@ -22,23 +24,23 @@ public class NewTest extends OpMode {
 
     public static double tickPer = 145.1 / 180;
 
-    private DcMotorEx LIFT_1;
-    private DcMotorEx LIFT_2;
+    private PIDController controller;
 
     @Override
     public void init() {
-        controller = new PIDController(p, i, d);
-        telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
-
         LIFT_1 = hardwareMap.get(DcMotorEx.class, Constants.Lift.LIFT_1);
+        LIFT_2 = hardwareMap.get(DcMotorEx.class, Constants.Lift.LIFT_2);
+
         LIFT_1.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        LIFT_2 = hardwareMap.get(DcMotorEx.class, Constants.Lift.LIFT_2);
+        controller = new PIDController(p, i, d);
+        telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
 
     }
 
     @Override
     public void loop() {
+        //TODO: Currently only works with one lift
         controller.setPID(p, i, d);
         int pos = LIFT_2.getCurrentPosition();
         double pid = controller.calculate(pos, target);
