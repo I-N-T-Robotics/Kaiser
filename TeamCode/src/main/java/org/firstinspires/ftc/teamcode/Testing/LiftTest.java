@@ -11,8 +11,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.teamcode.Constants;
 
-@TeleOp
+@TeleOp(name = "LiftTest" , group = "Dairy Queen")
 @Config
+
 public class LiftTest extends OpMode {
 
     private DcMotorEx LIFT_1;

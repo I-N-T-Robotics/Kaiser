@@ -7,7 +7,6 @@ import com.github.i_n_t_robotics.zhonyas.navx.AHRS;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -19,8 +18,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.teamcode.Constants.Lift;
-import org.firstinspires.ftc.teamcode.Constants.Vision;
 import org.firstinspires.ftc.teamcode.Constants.Drive;
+import org.firstinspires.ftc.teamcode.Constants.Vision;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -28,19 +27,20 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+
 @Config
-@TeleOp
+@TeleOp(name= "sussy")
 public class Sharko extends OpMode {
 
     // APRIL TAG
-    /* private VisionPortal visionPortal;
+    private VisionPortal visionPortal;
     private AprilTagProcessor aprilTag;
-    private AprilTagDetection desiredTag; */
+    private AprilTagDetection desiredTag;
 
     // DRIVETRAIN MOTOR DECLARATIONS
     public DcMotor frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor;
 
-    public CRServo ARM_1, ARM_2;
+    public Servo ARM_1, ARM_2;
 
     // MITSUMI MOTOR AND SERVO DECLARE
     public DcMotorEx LIFT_1, LIFT_2;
@@ -79,26 +79,28 @@ public class Sharko extends OpMode {
         LIFT_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         LIFT_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        ARM_1 = hardwareMap.crservo.get("ARM 1");
-        ARM_2 = hardwareMap.crservo.get("ARM 2");
+        ARM_1 = hardwareMap.servo.get("ARM 1");
+        ARM_2 = hardwareMap.servo.get("ARM 2");
 
-        ARM_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        ARM_2.setDirection(Servo.Direction.REVERSE);
 
+        ARM_1.setPosition(0.2);
+        ARM_2.setPosition(0.2);
 
         imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
                 AHRS.DeviceDataType.kProcessedData);
 
         controller = new PIDController(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
 
-        // initAprilTag();
+        initAprilTag();
 
-        /* if (Vision.USE_WEBCAM) {
+        if (Vision.USE_WEBCAM) {
             try {
                 setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        } */
+        }
 
     }
 
@@ -124,11 +126,27 @@ public class Sharko extends OpMode {
         }
 
         if (gamepad1.a) {
+            ARM_1.setPosition(0.2);
+            ARM_2.setPosition(0.2);
+        }
 
+        if (gamepad1.b) {
+            ARM_1.setPosition(0.4);
+            ARM_2.setPosition(0.4);
+        }
+
+        if (gamepad1.x) {
+            ARM_1.setPosition(0.8);
+            ARM_2.setPosition(0.8);
+        }
+
+        if (gamepad1.y) {
+            ARM_1.setPosition(0.7);
+            ARM_2.setPosition(0.7);
         }
 
         ///////////////// APRILTAG SETUP /////////////////
-        /* targetFound = false;
+        targetFound = false;
         desiredTag  = null;
 
         // Step through the list of detected tags and look for a matching tag
@@ -160,7 +178,7 @@ public class Sharko extends OpMode {
             telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
         } else {
             telemetry.addData("\n>","Drive using joysticks to find valid target\n");
-        } */
+        }
 
         ///////////////// FCD SETUP /////////////////
         double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
@@ -190,7 +208,7 @@ public class Sharko extends OpMode {
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
 
-        /* if (gamepad1.left_bumper && targetFound) {
+        if (gamepad1.left_bumper && targetFound) {
             double  rangeError      = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
             double  headingError    = desiredTag.ftcPose.bearing;
             double  yawError        = desiredTag.ftcPose.yaw;
@@ -223,14 +241,14 @@ public class Sharko extends OpMode {
             frontRightMotor.setPower(rightFrontPower);
             backLeftMotor.setPower(leftBackPower);
             backRightMotor.setPower(rightBackPower);
-        } */
+        }
 
         telemetry.update();
 
     }
-}
 
-    /* private void initAprilTag() {
+
+    private void initAprilTag() {
         aprilTag = new AprilTagProcessor.Builder().build();
 
         // Adjust Image Decimation to trade-off detection-range for detection-rate.
@@ -281,5 +299,6 @@ public class Sharko extends OpMode {
 
         GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
         gainControl.setGain(gain);
-    } */
+    }
+}
 

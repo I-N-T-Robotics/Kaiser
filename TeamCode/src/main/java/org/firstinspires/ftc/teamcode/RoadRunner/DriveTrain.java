@@ -24,6 +24,8 @@ import com.acmerobotics.roadrunner.ftc.LynxFirmware;
 import com.acmerobotics.roadrunner.ftc.OverflowEncoder;
 import com.acmerobotics.roadrunner.ftc.PositionVelocityPair;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
+import com.github.i_n_t_robotics.zhonyas.navx.AHRS;
+import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -35,9 +37,9 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Constants.Drive;
-import org.firstinspires.ftc.teamcode.Constants.Drive.PARAMS;
 
 import java.lang.Math;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,12 +50,57 @@ public class DriveTrain {
 
     public final VoltageSensor voltageSensor;
 
-    public final IMU imu;
+    public final AHRS imu;
 
     public final Localizer localizer;
     public Pose2d pose;
 
-    private final PARAMS params = new PARAMS();
+    public static class PARAMS {
+        // drive model parameters
+        public double inPerTick = 0.000753;
+        public double lateralInPerTick = -0.0005325981543257096;
+        public double trackWidthTicks = 17375.305;
+
+        // feedforward parameters (in tick units)
+        public double kS = 0.8667242003254163;
+        public double kV = 0.00015132445220638116;
+        public double kA = 0.00005;
+
+        // path profile parameters (in inches)
+        public double maxWheelVel = 50;
+        public double minProfileAccel = -30;
+        public double maxProfileAccel = 50;
+
+        // turn profile parameters (in radians)
+        public double maxAngVel = Math.PI; // shared with path
+        public double maxAngAccel = Math.PI;
+
+        // path controller gains
+        public double axialGain = 6.0;
+        public double lateralGain = 4.0;
+        public double headingGain = 10.0; // shared with turn
+
+        public double axialVelGain = 0.0;
+        public double lateralVelGain = 0.0;
+        public double headingVelGain = 0.0; // shared with turn
+    }
+
+    public static PARAMS PARAMS = new PARAMS();
+
+    public final MecanumKinematics kinematics = new MecanumKinematics(
+            PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick);
+
+    public final MotorFeedforward feedforward = new MotorFeedforward(PARAMS.kS, PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick);
+
+    public final TurnConstraints defaultTurnConstraints = new TurnConstraints(
+            PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
+    public final VelConstraint defaultVelConstraint =
+            new MinVelConstraint(Arrays.asList(
+                    kinematics.new WheelVelConstraint(PARAMS.maxWheelVel),
+                    new AngularVelConstraint(PARAMS.maxAngVel)
+            ));
+    public final AccelConstraint defaultAccelConstraint =
+            new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
     private final LinkedList<Pose2d> poseHistory = new LinkedList<>();
 
@@ -74,7 +121,7 @@ public class DriveTrain {
             lastRightRearPos = rightRear.getPositionAndVelocity().position;
             lastRightFrontPos = rightFront.getPositionAndVelocity().position;
 
-            lastHeading = Rotation2d.exp(imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
+            lastHeading = Rotation2d.exp(Math.toRadians(imu.getYaw()));
         }
 
         @Override
@@ -84,10 +131,10 @@ public class DriveTrain {
             PositionVelocityPair rightRearPosVel = rightRear.getPositionAndVelocity();
             PositionVelocityPair rightFrontPosVel = rightFront.getPositionAndVelocity();
 
-            Rotation2d heading = Rotation2d.exp(imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
+            Rotation2d heading = Rotation2d.exp(Math.toRadians(imu.getYaw()));
             double headingDelta = heading.minus(lastHeading);
 
-            Twist2dDual<Time> twist = Drive.kinematics.forward(new MecanumKinematics.WheelIncrements<>(
+            Twist2dDual<Time> twist = kinematics.forward(new MecanumKinematics.WheelIncrements<>(
                     new DualNum<Time>(new double[]{
                             (leftFrontPosVel.position - lastLeftFrontPos),
                             leftFrontPosVel.velocity,
@@ -143,18 +190,15 @@ public class DriveTrain {
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        imu = hardwareMap.get(IMU.class, "imu");
-        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
-        imu.initialize(parameters);
+        imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
+                AHRS.DeviceDataType.kProcessedData);
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
         localizer = new ThreeDeadWheelLocalizer(hardwareMap, PARAMS.inPerTick);
 
         //TODO MIGHT BE A PROBLEM..
-        FlightRecorder.write("MECANUM_PARAMS", params);
+        FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
 
     public void setDrivePowers(PoseVelocity2d powers) {
@@ -222,12 +266,12 @@ public class DriveTrain {
             )
                     .compute(txWorldTarget, pose, robotVelRobot);
 
-            MecanumKinematics.WheelVelocities<Time> wheelVels = Drive.kinematics.inverse(command);
+            MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
             double voltage = voltageSensor.getVoltage();
-            leftFront.setPower(Drive.feedforward.compute(wheelVels.leftFront) / voltage);
-            leftBack.setPower(Drive.feedforward.compute(wheelVels.leftBack) / voltage);
-            rightBack.setPower(Drive.feedforward.compute(wheelVels.rightBack) / voltage);
-            rightFront.setPower(Drive.feedforward.compute(wheelVels.rightFront) / voltage);
+            leftFront.setPower(feedforward.compute(wheelVels.leftFront) / voltage);
+            leftBack.setPower(feedforward.compute(wheelVels.leftBack) / voltage);
+            rightBack.setPower(feedforward.compute(wheelVels.rightBack) / voltage);
+            rightFront.setPower(feedforward.compute(wheelVels.rightFront) / voltage);
 
             FlightRecorder.write("TARGET_POSE", new PoseMessage(txWorldTarget.value()));
 
@@ -303,12 +347,12 @@ public class DriveTrain {
             )
                     .compute(txWorldTarget, pose, robotVelRobot);
 
-            MecanumKinematics.WheelVelocities<Time> wheelVels = Drive.kinematics.inverse(command);
+            MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
             double voltage = voltageSensor.getVoltage();
-            leftFront.setPower(Drive.feedforward.compute(wheelVels.leftFront) / voltage);
-            leftBack.setPower(Drive.feedforward.compute(wheelVels.leftBack) / voltage);
-            rightBack.setPower(Drive.feedforward.compute(wheelVels.rightBack) / voltage);
-            rightFront.setPower(Drive.feedforward.compute(wheelVels.rightFront) / voltage);
+            leftFront.setPower(feedforward.compute(wheelVels.leftFront) / voltage);
+            leftBack.setPower(feedforward.compute(wheelVels.leftBack) / voltage);
+            rightBack.setPower(feedforward.compute(wheelVels.rightBack) / voltage);
+            rightFront.setPower(feedforward.compute(wheelVels.rightFront) / voltage);
 
             FlightRecorder.write("TARGET_POSE", new PoseMessage(txWorldTarget.value()));
 
@@ -382,8 +426,8 @@ public class DriveTrain {
                 TurnAction::new,
                 FollowTrajectoryAction::new,
                 beginPose, 1e-6, 0.0,
-                Drive.defaultTurnConstraints,
-                Drive.defaultVelConstraint, Drive.defaultAccelConstraint,
+                defaultTurnConstraints,
+                defaultVelConstraint, defaultAccelConstraint,
                 0.25, 0.1
         );
     }

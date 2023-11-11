@@ -6,6 +6,15 @@ import com.acmerobotics.roadrunner.MinVelConstraint
 import com.acmerobotics.roadrunner.MotorFeedforward
 import com.acmerobotics.roadrunner.ProfileAccelConstraint
 import com.acmerobotics.roadrunner.TurnConstraints
+import com.acmerobotics.roadrunner.ftc.DriveType
+import com.acmerobotics.roadrunner.ftc.DriveView
+import com.acmerobotics.roadrunner.ftc.Encoder
+import com.github.i_n_t_robotics.zhonyas.navx.AHRS
+import com.qualcomm.hardware.lynx.LynxModule
+import com.qualcomm.robotcore.hardware.DcMotorEx
+import com.qualcomm.robotcore.hardware.HardwareMap
+import com.qualcomm.robotcore.hardware.IMU
+import com.qualcomm.robotcore.hardware.VoltageSensor
 import java.util.Arrays
 
 object Constants {
@@ -18,38 +27,6 @@ object Constants {
 
         const val IMU = "navx"
 
-        class PARAMS {
-            companion object {
-                //TODO: Again, literally everything has to be tuned to OUR robot
-                // Drive Model
-                @JvmField var inPerTick: Double = 0.000753
-                @JvmField var lateralInPerTick: Double = -0.0005325981543257096
-                @JvmField var trackWidthTicks: Double = 17375.305
-                
-                // FF Values (ticks)
-                @JvmField var kS: Double = 0.8667242003254163
-                @JvmField var kV: Double = 0.00015132445220638116
-                @JvmField var kA: Double = 0.00005
-                
-                // Path params (inches)
-                @JvmField var maxWheelVel: Double = 50.0
-                @JvmField var minProfileAccel: Double = -30.0
-                @JvmField var maxProfileAccel: Double = 50.0
-                
-                // Turn profile parameters (in radians)
-                @JvmField var maxAngVel: Double = Math.PI // shared with path
-                @JvmField var maxAngAccel: Double = Math.PI
-
-                // Path PID Values
-                @JvmField var axialGain: Double = 6.0
-                @JvmField var lateralGain: Double = 4.0
-                @JvmField var headingGain: Double = 10.0 // shared with turn
-                @JvmField var axialVelGain: Double = 0.0
-                @JvmField var lateralVelGain: Double = 0.0
-                @JvmField var headingVelGain: Double = 0.0 // shared with turn
-            }
-            
-        }
 
         class TDWParams {
             @JvmField var par0YTicks: Double = -7883.0 // y position of the first parallel encoder (in tick units)
@@ -57,21 +34,6 @@ object Constants {
             @JvmField var perpXTicks: Double = 7387.25 // x position of the perpendicular encoder (in tick units)
 
         }
-
-
-        @JvmField val kinematics = MecanumKinematics(
-                PARAMS.inPerTick * PARAMS.trackWidthTicks, PARAMS.inPerTick / PARAMS.lateralInPerTick)
-
-        @JvmField val feedforward = MotorFeedforward(PARAMS.kS, PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick)
-
-        @JvmField val defaultTurnConstraints = TurnConstraints(
-                PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel)
-        //TODO might also be a problem
-        @JvmField val defaultVelConstraint = MinVelConstraint(Arrays.asList(
-                kinematics.WheelVelConstraint(PARAMS.maxWheelVel),
-                AngularVelConstraint(PARAMS.maxAngVel)
-        ))
-        @JvmField val defaultAccelConstraint = ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel)
     }
 
     object Lift {
@@ -96,5 +58,30 @@ object Constants {
 
         const val USE_WEBCAM = true
 
+    }
+
+    class DriveViewer(
+            val type: DriveType,
+            val inPerTick: Double,
+            val maxVel: Double,
+            val minAccel: Double,
+            val maxAccel: Double,
+            val lynxModules: List<LynxModule>,
+            // ordered front to rear
+            val leftMotors: List<DcMotorEx>,
+            val rightMotors: List<DcMotorEx>,
+            // invariant: (leftEncs.isEmpty() && rightEncs.isEmpty()) ||
+            //                  (parEncs.isEmpty() && perpEncs.isEmpty())
+            leftEncs: List<Encoder>,
+            rightEncs: List<Encoder>,
+            parEncs: List<Encoder>,
+            perpEncs: List<Encoder>,
+            val imu: AHRS,
+            val voltageSensor: VoltageSensor,
+            val feedforward: MotorFeedforward,
+    )
+
+    interface DriveViewFactoryZ {
+        fun make(h: HardwareMap): DriveViewer
     }
 }
