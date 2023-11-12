@@ -2,16 +2,16 @@ package org.firstinspires.ftc.teamcode.Testing;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
-import com.acmerobotics.roadrunner.Twist2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.RoadRunner.DriveTrain;
+import org.firstinspires.ftc.teamcode.RoadRunner.TuningOpModes;
 
 public class LocalizationTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
-        /* if (TuningOpModes.DRIVE_CLASS.equals(DriveTrain.class)) {
+         if (TuningOpModes.DRIVE_CLASS.equals(DriveTrain.class)) {
             DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
 
             waitForStart();
@@ -34,6 +34,6 @@ public class LocalizationTest extends LinearOpMode {
             }
         } else {
             throw new AssertionError();
-        } */
+        }
     }
 }

@@ -35,7 +35,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Constants.Drive;
 
 import java.lang.Math;
@@ -51,6 +50,7 @@ public class DriveTrain {
     public final VoltageSensor voltageSensor;
 
     public final AHRS imu;
+    public final IMU angIMU;
 
     public final Localizer localizer;
     public Pose2d pose;
@@ -192,6 +192,12 @@ public class DriveTrain {
 
         imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
                 AHRS.DeviceDataType.kProcessedData);
+
+        angIMU = hardwareMap.get(IMU.class, "imu");
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+        angIMU.initialize(parameters);
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
