@@ -44,4 +44,21 @@ object Constants {
         const val USE_WEBCAM = true
 
     }
+
+    object Arm {
+        const val ticksPer = 145.1 / 180
+
+        const val PIVOT_START = 0.3
+        const val PIVOT_COLLECT = 0;
+        const val PIVOT_MID = 0
+
+        const val PITCH_START = 0.5
+        const val PITCH_COLLECT = 0;
+
+        const val OPEN = 0.5
+        const val CLOSE = 0;
+
+        const val LIFT_START = 20
+        const val LIFT_MAX = 550
+    }
 }

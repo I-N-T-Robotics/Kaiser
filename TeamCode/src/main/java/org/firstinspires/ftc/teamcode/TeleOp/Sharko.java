@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.github.i_n_t_robotics.zhonyas.navx.AHRS;
@@ -21,6 +23,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.teamcode.Constants.Lift;
 import org.firstinspires.ftc.teamcode.Constants.Drive;
 import org.firstinspires.ftc.teamcode.Constants.Vision;
+import org.firstinspires.ftc.teamcode.Constants.Arm;
 import org.firstinspires.ftc.teamcode.RoadRunner.DriveTrain;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -42,7 +45,7 @@ public class Sharko extends OpMode {
     // DRIVETRAIN MOTOR DECLARATIONS
     public DcMotor frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor;
 
-    public Servo ARM_1, ARM_2;
+    private Servo pitchServo, rollServo, leftPivot, rightPivot;
 
     // MITSUMI MOTOR AND SERVO DECLARE
     public DcMotorEx LIFT_1, LIFT_2;
@@ -52,13 +55,12 @@ public class Sharko extends OpMode {
 
     private PIDController controller;
 
-    private double setPositionTop = -530;
+    public static int target = 0;
 
     public enum armStates {
         START,
         UNDERPASS,
         COLLECT,
-        SCORE,
         PLACEMID
     }
 
@@ -78,7 +80,7 @@ public class Sharko extends OpMode {
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        LIFT_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        LIFT_1.setDirection(DcMotorSimple.Direction.REVERSE);
 
         LIFT_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         LIFT_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -91,18 +93,25 @@ public class Sharko extends OpMode {
         LIFT_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         LIFT_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        ARM_1 = hardwareMap.servo.get("ARM 1");
-        ARM_2 = hardwareMap.servo.get("ARM 2");
+        pitchServo = hardwareMap.servo.get("pitch");
+        rollServo = hardwareMap.servo.get("roll");
 
-        ARM_2.setDirection(Servo.Direction.REVERSE);
+        leftPivot = hardwareMap.servo.get("left pivot");
+        rightPivot = hardwareMap.servo.get("right pivot");
 
-        ARM_1.setPosition(0.2);
-        ARM_2.setPosition(0.2);
+        leftPivot.setDirection(Servo.Direction.REVERSE);
+
+        rollServo.setPosition(0.5);
+        pitchServo.setPosition(0.5);
+
+        setPivot(Arm.PIVOT_START);
 
         imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
                 AHRS.DeviceDataType.kProcessedData);
 
         controller = new PIDController(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
+        telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
+
         DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
 
 
@@ -124,30 +133,45 @@ public class Sharko extends OpMode {
     double turn = 0;
 
     public void loop() {
+        controller.setPID(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
+        int pos = LIFT_2.getCurrentPosition();
+        double pid = controller.calculate(pos, target);
+        double ff = Math.cos(Math.toRadians(target / Arm.ticksPer) * Lift.ARM_F);
 
-        if (gamepad1.a) {
-            ARM_1.setPosition(0.2);
-            ARM_2.setPosition(0.2);
-        }
+        double power = pid + ff;
 
-        if (gamepad1.b) {
-            ARM_1.setPosition(0.4);
-            ARM_2.setPosition(0.4);
-        }
+        LIFT_1.setPower(power);
+        LIFT_2.setPower(power);
 
-        if (gamepad1.x) {
-            ARM_1.setPosition(0.8);
-            ARM_2.setPosition(0.8);
-        }
 
-        if (gamepad1.y) {
-            ARM_1.setPosition(0.7);
-            ARM_2.setPosition(0.7);
-        }
 
         switch (state) {
 
             case START:
+                target = Arm.LIFT_START;
+
+                setPivot(Arm.PIVOT_START);
+                pitchServo.setPosition(Arm.PITCH_START);
+
+                if (gamepad1.left_bumper) {
+                    state = armStates.COLLECT;
+                }
+
+                break;
+
+            case COLLECT:
+
+
+            case UNDERPASS:
+                target = Arm.LIFT_MAX;
+
+                if (Math.abs(Arm.LIFT_MAX - pos) <= 15) {
+                    setPivot(Arm.PIVOT_MID);
+                }
+
+
+
+
 
         }
 
@@ -249,6 +273,8 @@ public class Sharko extends OpMode {
             backRightMotor.setPower(rightBackPower);
         }
 
+        telemetry.addData("current pos", pos);
+        telemetry.addData("target", target);
         telemetry.update();
 
     }
@@ -305,6 +331,11 @@ public class Sharko extends OpMode {
 
         GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
         gainControl.setGain(gain);
+    }
+
+    public void setPivot(double pos) {
+        leftPivot.setPosition(pos);
+        rightPivot.setPosition(pos);
     }
 }
 
