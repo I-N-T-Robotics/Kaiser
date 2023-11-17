@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.acmerobotics.dashboard.config.Config;
 
+import com.acmerobotics.roadrunner.Pose2d;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.github.i_n_t_robotics.zhonyas.navx.AHRS;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
@@ -20,6 +21,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.teamcode.Constants.Lift;
 import org.firstinspires.ftc.teamcode.Constants.Drive;
 import org.firstinspires.ftc.teamcode.Constants.Vision;
+import org.firstinspires.ftc.teamcode.RoadRunner.DriveTrain;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -91,6 +93,8 @@ public class Sharko extends OpMode {
                 AHRS.DeviceDataType.kProcessedData);
 
         controller = new PIDController(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
+        DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
+
 
         initAprilTag();
 
@@ -110,20 +114,6 @@ public class Sharko extends OpMode {
     double turn = 0;
 
     public void loop() {
-        double liftPosition = LIFT_1.getCurrentPosition();
-        double outputTop = controller.calculate(liftPosition, setPositionTop);
-        double outputGround = controller.calculate(liftPosition, -50);
-        boolean atTop = Math.abs(setPositionTop - liftPosition) < 10;
-
-        if (gamepad1.dpad_up) {
-            LIFT_1.setPower(outputTop * 0.6);
-            LIFT_2.setPower(outputTop * 0.6);
-        }
-
-        if (gamepad1.dpad_down) {
-            LIFT_1.setPower(outputGround * 0.005);
-            LIFT_2.setPower(outputGround * 0.005);
-        }
 
         if (gamepad1.a) {
             ARM_1.setPosition(0.2);

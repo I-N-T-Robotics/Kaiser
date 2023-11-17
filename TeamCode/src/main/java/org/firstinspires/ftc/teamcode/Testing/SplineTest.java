@@ -6,11 +6,12 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.RoadRunner.DriveTrain;
+import org.firstinspires.ftc.teamcode.RoadRunner.TuningOpModes;
 
 public final class SplineTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
-       /* if (TuningOpModes.DRIVE_CLASS.equals(DriveTrain.class)) {
+       if (TuningOpModes.DRIVE_CLASS.equals(DriveTrain.class)) {
             DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
 
             waitForStart();
@@ -22,6 +23,6 @@ public final class SplineTest extends LinearOpMode {
                             .build());
         }  else {
             throw new AssertionError();
-        } */
+        }
     }
 }
