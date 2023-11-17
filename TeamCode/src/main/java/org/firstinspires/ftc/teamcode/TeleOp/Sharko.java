@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
@@ -30,6 +31,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 
@@ -45,7 +47,7 @@ public class Sharko extends OpMode {
     // DRIVETRAIN MOTOR DECLARATIONS
     public DcMotor frontLeftMotor, backLeftMotor, frontRightMotor, backRightMotor;
 
-    private Servo pitchServo, rollServo, leftPivot, rightPivot;
+    private Servo pitchServo, rollServo, leftPivot, rightPivot, claw;
 
     // MITSUMI MOTOR AND SERVO DECLARE
     public DcMotorEx LIFT_1, LIFT_2;
@@ -61,7 +63,10 @@ public class Sharko extends OpMode {
         START,
         UNDERPASS,
         COLLECT,
-        PLACEMID
+        STORE,
+        LOW,
+        MID,
+        HIGH
     }
 
     armStates state = armStates.START;
@@ -99,6 +104,8 @@ public class Sharko extends OpMode {
         leftPivot = hardwareMap.servo.get("left pivot");
         rightPivot = hardwareMap.servo.get("right pivot");
 
+        claw = hardwareMap.servo.get("claw");
+
         leftPivot.setDirection(Servo.Direction.REVERSE);
 
         rollServo.setPosition(0.5);
@@ -113,7 +120,6 @@ public class Sharko extends OpMode {
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
 
         DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
-
 
         initAprilTag();
 
@@ -132,6 +138,8 @@ public class Sharko extends OpMode {
     double strafe = 0;
     double turn = 0;
 
+    ElapsedTime eventTimer = new ElapsedTime();
+
     public void loop() {
         controller.setPID(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
         int pos = LIFT_2.getCurrentPosition();
@@ -143,8 +151,6 @@ public class Sharko extends OpMode {
         LIFT_1.setPower(power);
         LIFT_2.setPower(power);
 
-
-
         switch (state) {
 
             case START:
@@ -152,26 +158,84 @@ public class Sharko extends OpMode {
 
                 setPivot(Arm.PIVOT_START);
                 pitchServo.setPosition(Arm.PITCH_START);
+                claw.setPosition(Arm.OPEN);
 
-                if (gamepad1.left_bumper) {
+                if (gamepad2.left_bumper) {
+                    eventTimer.reset();
                     state = armStates.COLLECT;
                 }
 
                 break;
 
             case COLLECT:
+                target = Arm.LIFT_START;
 
+                setPivot(Arm.PIVOT_COLLECT);
+                pitchServo.setPosition(Arm.PITCH_START);
+
+                if (gamepad2.a) {
+                    claw.setPosition(Arm.CLOSE);
+                    eventTimer.reset();
+                    state = armStates.STORE;
+                }
+
+                break;
+
+            case STORE:
+
+                if (gamepad2.a) {
+                    target = Arm.LIFT_START;
+
+                    setPivot(Arm.PIVOT_STORE);
+                    pitchServo.setPosition(Arm.PITCH_STORE);
+                }
+
+                if (gamepad2.y) {
+                    eventTimer.reset();
+                    state = armStates.UNDERPASS;
+                }
+
+                break;
 
             case UNDERPASS:
                 target = Arm.LIFT_MAX;
 
-                if (Math.abs(Arm.LIFT_MAX - pos) <= 15) {
+                if (gamepad2.y && (Math.abs(Arm.LIFT_MAX - pos) <= 15)) {
                     setPivot(Arm.PIVOT_MID);
+                    pitchServo.setPosition(Arm.PITCH_MID);
+                    state = armStates.MID;
                 }
 
+                if (gamepad2.x && (Math.abs(Arm.LIFT_MAX - pos) <= 15)) {
+                    setPivot(Arm.PIVOT_START);
+                    pitchServo.setPosition(Arm.PITCH_START);
 
+                    if (eventTimer.time() >= 3) {
+                        state = armStates.START;
+                    }
 
+            }
 
+                break;
+
+            case MID:
+                if (gamepad2.y) {
+                    target = Arm.LIFT_MID;
+                }
+
+                if (gamepad2.a) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad2.x) {
+                    eventTimer.reset();
+                    state = armStates.UNDERPASS;
+                }
+
+                break;
+
+            default:
+                state = armStates.START;
 
         }
 
