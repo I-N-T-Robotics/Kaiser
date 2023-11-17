@@ -24,9 +24,10 @@ object Constants {
         const val LIFT_1 = "Lift 1"
         const val LIFT_2 = "Lift 2"
 
-        const val ARM_P = 0.1
-        const val ARM_I = 0
-        const val ARM_D = 0.08
+        const val ARM_P = 0.09
+        const val ARM_I = 0.04
+        const val ARM_D = 0.0007225
+        const val ARM_F = 0.432
     }
     object Vision {
         const val DESIRED_DISTANCE = 12.0

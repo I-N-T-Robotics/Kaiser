@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Constants;
 
@@ -18,6 +19,8 @@ public class LiftTest extends OpMode {
 
     private DcMotorEx LIFT_1;
     private DcMotorEx LIFT_2;
+
+    private Servo leftPivot, rightPivot;
 
     public static double p = 0.09, i = 0.04, d = 0.0007225, f = 0.432;
 
@@ -34,6 +37,14 @@ public class LiftTest extends OpMode {
 
         LIFT_1.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        leftPivot = hardwareMap.servo.get("left pivot");
+        rightPivot = hardwareMap.servo.get("right pivot");
+
+        leftPivot.setDirection(Servo.Direction.REVERSE);
+
+        setPivot(0.3, 0.3);
+
+
         controller = new PIDController(p, i, d);
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
 
@@ -49,13 +60,34 @@ public class LiftTest extends OpMode {
 
         double power = pid + ff;
 
-        // LIFT_1.setPower(power);
+        LIFT_1.setPower(power);
         LIFT_2.setPower(power);
+
+        if (gamepad1.dpad_down) {
+            target = 20;
+        }
+
+        if (gamepad1.dpad_up) {
+            target = 550;
+        }
+
+        if (gamepad1.dpad_left) {
+            target = 200;
+        }
+
+        if (gamepad1.dpad_right) {
+            target = 400;
+        }
 
         telemetry.addData("current pos", pos);
         telemetry.addData("target", target);
         telemetry.update();
 
+    }
+
+    public void setPivot(double leftPos, double rightPos) {
+        leftPivot.setPosition(leftPos);
+        rightPivot.setPosition(rightPos);
     }
 }
 

@@ -54,6 +54,16 @@ public class Sharko extends OpMode {
 
     private double setPositionTop = -530;
 
+    public enum armStates {
+        START,
+        UNDERPASS,
+        COLLECT,
+        SCORE,
+        PLACEMID
+    }
+
+    armStates state = armStates.START;
+
     public void init() {
         frontLeftMotor = hardwareMap.dcMotor.get(Drive.FRONT_LEFT);
         backLeftMotor = hardwareMap.dcMotor.get(Drive.BACK_LEFT);
@@ -133,6 +143,12 @@ public class Sharko extends OpMode {
         if (gamepad1.y) {
             ARM_1.setPosition(0.7);
             ARM_2.setPosition(0.7);
+        }
+
+        switch (state) {
+
+            case START:
+
         }
 
         ///////////////// APRILTAG SETUP /////////////////
