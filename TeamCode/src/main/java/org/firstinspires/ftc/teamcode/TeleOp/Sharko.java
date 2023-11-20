@@ -57,7 +57,7 @@ public class Sharko extends OpMode {
 
     private PIDController controller;
 
-    public static int target = 0;
+    public static int target = -20;
 
     public enum armStates {
         START,
@@ -83,7 +83,7 @@ public class Sharko extends OpMode {
 
         //TODO: Change this to left and fix joystick inversion
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         LIFT_1.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -101,8 +101,8 @@ public class Sharko extends OpMode {
         pitchServo = hardwareMap.servo.get("pitch");
         rollServo = hardwareMap.servo.get("roll");
 
-        leftPivot = hardwareMap.servo.get("left pivot");
-        rightPivot = hardwareMap.servo.get("right pivot");
+        leftPivot = hardwareMap.servo.get("ARM 1");
+        rightPivot = hardwareMap.servo.get("ARM 2");
 
         claw = hardwareMap.servo.get("claw");
 
@@ -110,8 +110,9 @@ public class Sharko extends OpMode {
 
         rollServo.setPosition(0.5);
         pitchServo.setPosition(0.5);
+        claw.setPosition(Arm.CLOSE);
 
-        setPivot(Arm.PIVOT_START);
+        setPivot(0.1);
 
         imu = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
                 AHRS.DeviceDataType.kProcessedData);
@@ -119,7 +120,7 @@ public class Sharko extends OpMode {
         controller = new PIDController(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
 
-        DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
+       // DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
 
         initAprilTag();
 
@@ -138,6 +139,8 @@ public class Sharko extends OpMode {
     double strafe = 0;
     double turn = 0;
 
+    boolean update = false;
+
     ElapsedTime eventTimer = new ElapsedTime();
 
     public void loop() {
@@ -148,19 +151,20 @@ public class Sharko extends OpMode {
 
         double power = pid + ff;
 
-        LIFT_1.setPower(power);
-        LIFT_2.setPower(power);
+      LIFT_1.setPower(power);
+      LIFT_2.setPower(power);
+
+
 
         switch (state) {
 
             case START:
-                target = Arm.LIFT_START;
-
-                setPivot(Arm.PIVOT_START);
+                target = -20;
+                setPivot(0.1);
                 pitchServo.setPosition(Arm.PITCH_START);
-                claw.setPosition(Arm.OPEN);
 
-                if (gamepad2.left_bumper) {
+
+                if (gamepad1.left_bumper) {
                     eventTimer.reset();
                     state = armStates.COLLECT;
                 }
@@ -168,13 +172,24 @@ public class Sharko extends OpMode {
                 break;
 
             case COLLECT:
-                target = Arm.LIFT_START;
 
-                setPivot(Arm.PIVOT_COLLECT);
-                pitchServo.setPosition(Arm.PITCH_START);
+                setPivot(0.67);
+                pitchServo.setPosition(0.93);
 
-                if (gamepad2.a) {
+                if (eventTimer.time() >= 1 && (update == false)) {
+                    claw.setPosition(Arm.OPEN);
+                    update = true;
+                }
+
+                if (gamepad1.a) {
                     claw.setPosition(Arm.CLOSE);
+                }
+
+                if (gamepad1.b) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad1.x) {
                     eventTimer.reset();
                     state = armStates.STORE;
                 }
@@ -183,21 +198,33 @@ public class Sharko extends OpMode {
 
             case STORE:
 
-                if (gamepad2.a) {
-                    target = Arm.LIFT_START;
+                    setPivot(0.1);
+                    pitchServo.setPosition(Arm.PITCH_START);
 
-                    setPivot(Arm.PIVOT_STORE);
-                    pitchServo.setPosition(Arm.PITCH_STORE);
+
+                if (gamepad1.dpad_down) {
+                    eventTimer.reset();
+                    state = armStates.LOW;
                 }
 
-                if (gamepad2.y) {
+                if (gamepad1.dpad_left) {
                     eventTimer.reset();
-                    state = armStates.UNDERPASS;
+                    state = armStates.MID;
+                }
+
+                if (gamepad1.dpad_up) {
+                    eventTimer.reset();
+                    state = armStates.HIGH;
+                }
+
+                if (gamepad1.start) {
+                    eventTimer.reset();
+                    state = armStates.START;
                 }
 
                 break;
 
-            case UNDERPASS:
+            /* case UNDERPASS:
                 target = Arm.LIFT_MAX;
 
                 if (gamepad2.y && (Math.abs(Arm.LIFT_MAX - pos) <= 15)) {
@@ -216,23 +243,62 @@ public class Sharko extends OpMode {
 
             }
 
-                break;
+                break; */
 
-            case MID:
-                if (gamepad2.y) {
-                    target = Arm.LIFT_MID;
-                }
+            case LOW:
 
-                if (gamepad2.a) {
+                setPivot(0.5);
+                pitchServo.setPosition(0.77);
+
+                if (gamepad1.a) {
                     claw.setPosition(Arm.OPEN);
                 }
 
-                if (gamepad2.x) {
+                if (gamepad1.dpad_right) {
                     eventTimer.reset();
-                    state = armStates.UNDERPASS;
+                    claw.setPosition(Arm.CLOSE);
+                    state = armStates.START;
                 }
 
                 break;
+
+            case MID:
+                setPivot(0.5);
+                pitchServo.setPosition(0.65);
+
+                target = -200;
+
+
+                if (gamepad1.a) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad1.dpad_right) {
+                    eventTimer.reset();
+                    claw.setPosition(Arm.CLOSE);
+                    state = armStates.START;
+                }
+                break;
+
+            case HIGH:
+
+                setPivot(0.5);
+                pitchServo.setPosition(0.65);
+
+                target = -500;
+
+                if (gamepad1.a) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad1.dpad_right) {
+                    eventTimer.reset();
+                    claw.setPosition(Arm.CLOSE);
+                    state = armStates.START;
+                }
+
+                break;
+
 
             default:
                 state = armStates.START;
@@ -276,14 +342,14 @@ public class Sharko extends OpMode {
 
         ///////////////// FCD SETUP /////////////////
         double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
-        double x = gamepad1.left_stick_x;
+        double x = -gamepad1.left_stick_x;
         double rx = gamepad1.right_stick_x;
 
         if (gamepad1.options) {
             imu.zeroYaw();
         }
 
-        double botHeading = -Math.toRadians(imu.getYaw());
+        double botHeading = Math.toRadians(imu.getYaw());
 
         // Rotate the movement direction counter to the bot's rotation
         double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
@@ -302,7 +368,7 @@ public class Sharko extends OpMode {
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
 
-        if (gamepad1.left_bumper && targetFound) {
+        if (gamepad1.dpad_left && targetFound) {
             double  rangeError      = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
             double  headingError    = desiredTag.ftcPose.bearing;
             double  yawError        = desiredTag.ftcPose.yaw;
