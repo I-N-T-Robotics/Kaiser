@@ -13,7 +13,7 @@ import org.firstinspires.ftc.teamcode.util.Tram;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.opencv.core.Scalar;
 
-@Autonomous(name = "Right Side", group = "Red Autos")
+@Autonomous(name = "Right Side Red", group = "Red Autos")
 public class RedRight extends OpMode {
     private VisionPortal visionPortal;
     private Tram redTram;

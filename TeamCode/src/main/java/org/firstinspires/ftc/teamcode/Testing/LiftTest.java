@@ -37,12 +37,12 @@ public class LiftTest extends OpMode {
 
         LIFT_1.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        leftPivot = hardwareMap.servo.get("left pivot");
-        rightPivot = hardwareMap.servo.get("right pivot");
+        //leftPivot = hardwareMap.servo.get("left pivot");
+        // rightPivot = hardwareMap.servo.get("right pivot");
 
-        leftPivot.setDirection(Servo.Direction.REVERSE);
+        //leftPivot.setDirection(Servo.Direction.REVERSE);
 
-        setPivot(0.3, 0.3);
+        //setPivot(0.3, 0.3);
 
 
         controller = new PIDController(p, i, d);
@@ -54,7 +54,7 @@ public class LiftTest extends OpMode {
     public void loop() {
         //TODO: Currently only works with one lift
         controller.setPID(p, i, d);
-        int pos = LIFT_2.getCurrentPosition();
+        int pos = LIFT_1.getCurrentPosition();
         double pid = controller.calculate(pos, target);
         double ff = Math.cos(Math.toRadians(target / tickPer) * f);
 
@@ -63,23 +63,9 @@ public class LiftTest extends OpMode {
         LIFT_1.setPower(power);
         LIFT_2.setPower(power);
 
-        if (gamepad1.dpad_down) {
-            target = 20;
-        }
-
-        if (gamepad1.dpad_up) {
-            target = 550;
-        }
-
-        if (gamepad1.dpad_left) {
-            target = 200;
-        }
-
-        if (gamepad1.dpad_right) {
-            target = 400;
-        }
 
         telemetry.addData("current pos", pos);
+        telemetry.addData("br", LIFT_2.getCurrentPosition());
         telemetry.addData("target", target);
         telemetry.update();
 

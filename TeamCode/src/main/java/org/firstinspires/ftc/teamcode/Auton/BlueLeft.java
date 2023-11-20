@@ -16,7 +16,7 @@ import org.opencv.core.Scalar;
 
 import java.util.concurrent.TimeUnit;
 
-@Autonomous(name = "Left Side", group = "Blue Autos")
+@Autonomous(name = "Left Side Blue", group = "Blue Autos")
 public class BlueLeft extends OpMode {
     private VisionPortal visionPortal;
     private Tram blueTram;

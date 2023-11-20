@@ -59,11 +59,11 @@ object Constants {
         const val PITCH_MID = 0.5;
         const val PITCH_COLLECT = 0.5;
 
-        const val OPEN = 0.5
-        const val CLOSE = 0.5;
+        const val OPEN = 0.3
+        const val CLOSE = 0.5
 
-        const val LIFT_START = 20
-        const val LIFT_MID = 20
-        const val LIFT_MAX = 550
+        const val LIFT_START = -50
+        const val LIFT_MID = -50
+        const val LIFT_MAX = -550
     }
 }
