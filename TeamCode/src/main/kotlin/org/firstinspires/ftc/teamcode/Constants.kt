@@ -26,8 +26,8 @@ object Constants {
 
         const val ARM_P = 0.09
         const val ARM_I = 0.04
-        const val ARM_D = 0.0007225
-        const val ARM_F = 0.432
+        const val ARM_D = 0.00082225
+        const val ARM_F = 0.4
     }
     object Vision {
         const val DESIRED_DISTANCE = 12.0

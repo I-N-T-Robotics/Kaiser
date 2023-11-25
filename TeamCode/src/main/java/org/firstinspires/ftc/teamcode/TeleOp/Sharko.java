@@ -57,7 +57,7 @@ public class Sharko extends OpMode {
 
     private PIDController controller;
 
-    public static int target = -20;
+    public static int target = 0;
 
     public enum armStates {
         START,
@@ -145,7 +145,7 @@ public class Sharko extends OpMode {
 
     public void loop() {
         controller.setPID(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
-        int pos = LIFT_2.getCurrentPosition();
+        int pos = LIFT_1.getCurrentPosition();
         double pid = controller.calculate(pos, target);
         double ff = Math.cos(Math.toRadians(target / Arm.ticksPer) * Lift.ARM_F);
 
@@ -159,8 +159,8 @@ public class Sharko extends OpMode {
         switch (state) {
 
             case START:
-                target = -20;
-                setPivot(0.1);
+                target = -50;
+                setPivot(0.25);
                 pitchServo.setPosition(Arm.PITCH_START);
 
 
@@ -198,7 +198,7 @@ public class Sharko extends OpMode {
 
             case STORE:
 
-                    setPivot(0.1);
+                    setPivot(0.25);
                     pitchServo.setPosition(Arm.PITCH_START);
 
 
@@ -217,7 +217,7 @@ public class Sharko extends OpMode {
                     state = armStates.HIGH;
                 }
 
-                if (gamepad1.start) {
+                if (gamepad1.back) {
                     eventTimer.reset();
                     state = armStates.START;
                 }
@@ -264,7 +264,7 @@ public class Sharko extends OpMode {
 
             case MID:
                 setPivot(0.5);
-                pitchServo.setPosition(0.65);
+                pitchServo.setPosition(0.77);
 
                 target = -200;
 
@@ -283,7 +283,7 @@ public class Sharko extends OpMode {
             case HIGH:
 
                 setPivot(0.5);
-                pitchServo.setPosition(0.65);
+                pitchServo.setPosition(0.77);
 
                 target = -500;
 
@@ -368,14 +368,14 @@ public class Sharko extends OpMode {
         frontRightMotor.setPower(frontRightPower);
         backRightMotor.setPower(backRightPower);
 
-        if (gamepad1.dpad_left && targetFound) {
+        if (gamepad1.right_bumper && targetFound) {
             double  rangeError      = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
             double  headingError    = desiredTag.ftcPose.bearing;
             double  yawError        = desiredTag.ftcPose.yaw;
 
-            drive  = Range.clip(-rangeError * Vision.SPEED_GAIN, -Vision.MAX_AUTO_SPEED, Vision.MAX_AUTO_SPEED);
-            turn   = Range.clip(-headingError * Vision.TURN_GAIN, -Vision.MAX_AUTO_TURN, Vision.MAX_AUTO_TURN) ;
-            strafe = Range.clip(yawError * Vision.STRAFE_GAIN, -Vision.MAX_AUTO_STRAFE, Vision.MAX_AUTO_STRAFE);
+            drive  = -Range.clip(rangeError * Vision.SPEED_GAIN, -Vision.MAX_AUTO_SPEED, Vision.MAX_AUTO_SPEED);
+            turn   = Range.clip(headingError * Vision.TURN_GAIN, -Vision.MAX_AUTO_TURN, Vision.MAX_AUTO_TURN) ;
+            strafe = Range.clip(-yawError * Vision.STRAFE_GAIN, -Vision.MAX_AUTO_STRAFE, Vision.MAX_AUTO_STRAFE);
 
             telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
 
@@ -406,6 +406,8 @@ public class Sharko extends OpMode {
         telemetry.addData("current pos", pos);
         telemetry.addData("target", target);
         telemetry.update();
+
+
 
     }
 
