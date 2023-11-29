@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Config
-@TeleOp(name= "sussy")
+@TeleOp(name = "sussy")
 public class Sharko extends OpMode {
 
     // APRIL TAG
@@ -58,6 +58,10 @@ public class Sharko extends OpMode {
     private PIDController controller;
 
     public static int target = 0;
+
+    public static double SPEED_GAIN = 0.03;
+    public static double STRAFE_GAIN = 0.015;
+    public static double TURN_GAIN = 0.04;
 
     public enum armStates {
         START,
@@ -120,7 +124,7 @@ public class Sharko extends OpMode {
         controller = new PIDController(Lift.ARM_P, Lift.ARM_I, Lift.ARM_D);
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
 
-       // DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
+        // DriveTrain drive = new DriveTrain(hardwareMap, new Pose2d(0, 0, 0));
 
         initAprilTag();
 
@@ -151,163 +155,14 @@ public class Sharko extends OpMode {
 
         double power = pid + ff;
 
-      LIFT_1.setPower(power);
-      LIFT_2.setPower(power);
+        LIFT_1.setPower(power);
+        LIFT_2.setPower(power);
 
-
-
-        switch (state) {
-
-            case START:
-                target = -50;
-                setPivot(0.25);
-                pitchServo.setPosition(Arm.PITCH_START);
-
-
-                if (gamepad1.left_bumper) {
-                    eventTimer.reset();
-                    state = armStates.COLLECT;
-                }
-
-                break;
-
-            case COLLECT:
-
-                setPivot(0.67);
-                pitchServo.setPosition(0.93);
-
-                if (eventTimer.time() >= 1 && (update == false)) {
-                    claw.setPosition(Arm.OPEN);
-                    update = true;
-                }
-
-                if (gamepad1.a) {
-                    claw.setPosition(Arm.CLOSE);
-                }
-
-                if (gamepad1.b) {
-                    claw.setPosition(Arm.OPEN);
-                }
-
-                if (gamepad1.x) {
-                    eventTimer.reset();
-                    state = armStates.STORE;
-                }
-
-                break;
-
-            case STORE:
-
-                    setPivot(0.25);
-                    pitchServo.setPosition(Arm.PITCH_START);
-
-
-                if (gamepad1.dpad_down) {
-                    eventTimer.reset();
-                    state = armStates.LOW;
-                }
-
-                if (gamepad1.dpad_left) {
-                    eventTimer.reset();
-                    state = armStates.MID;
-                }
-
-                if (gamepad1.dpad_up) {
-                    eventTimer.reset();
-                    state = armStates.HIGH;
-                }
-
-                if (gamepad1.back) {
-                    eventTimer.reset();
-                    state = armStates.START;
-                }
-
-                break;
-
-            /* case UNDERPASS:
-                target = Arm.LIFT_MAX;
-
-                if (gamepad2.y && (Math.abs(Arm.LIFT_MAX - pos) <= 15)) {
-                    setPivot(Arm.PIVOT_MID);
-                    pitchServo.setPosition(Arm.PITCH_MID);
-                    state = armStates.MID;
-                }
-
-                if (gamepad2.x && (Math.abs(Arm.LIFT_MAX - pos) <= 15)) {
-                    setPivot(Arm.PIVOT_START);
-                    pitchServo.setPosition(Arm.PITCH_START);
-
-                    if (eventTimer.time() >= 3) {
-                        state = armStates.START;
-                    }
-
-            }
-
-                break; */
-
-            case LOW:
-
-                setPivot(0.5);
-                pitchServo.setPosition(0.77);
-
-                if (gamepad1.a) {
-                    claw.setPosition(Arm.OPEN);
-                }
-
-                if (gamepad1.dpad_right) {
-                    eventTimer.reset();
-                    claw.setPosition(Arm.CLOSE);
-                    state = armStates.START;
-                }
-
-                break;
-
-            case MID:
-                setPivot(0.5);
-                pitchServo.setPosition(0.77);
-
-                target = -200;
-
-
-                if (gamepad1.a) {
-                    claw.setPosition(Arm.OPEN);
-                }
-
-                if (gamepad1.dpad_right) {
-                    eventTimer.reset();
-                    claw.setPosition(Arm.CLOSE);
-                    state = armStates.START;
-                }
-                break;
-
-            case HIGH:
-
-                setPivot(0.5);
-                pitchServo.setPosition(0.77);
-
-                target = -500;
-
-                if (gamepad1.a) {
-                    claw.setPosition(Arm.OPEN);
-                }
-
-                if (gamepad1.dpad_right) {
-                    eventTimer.reset();
-                    claw.setPosition(Arm.CLOSE);
-                    state = armStates.START;
-                }
-
-                break;
-
-
-            default:
-                state = armStates.START;
-
-        }
+        armHandler();
 
         ///////////////// APRILTAG SETUP /////////////////
         targetFound = false;
-        desiredTag  = null;
+        desiredTag = null;
 
         // Step through the list of detected tags and look for a matching tag
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
@@ -331,13 +186,13 @@ public class Sharko extends OpMode {
         }
 
         if (targetFound) {
-            telemetry.addData("\n>","HOLD Left-Bumper to Drive to Target\n");
+            telemetry.addData("\n>", "HOLD Left-Bumper to Drive to Target\n");
             telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
-            telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
-            telemetry.addData("Bearing","%3.0f degrees", desiredTag.ftcPose.bearing);
-            telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
+            telemetry.addData("Range", "%5.1f inches", desiredTag.ftcPose.range);
+            telemetry.addData("Bearing", "%3.0f degrees", desiredTag.ftcPose.bearing);
+            telemetry.addData("Yaw", "%3.0f degrees", desiredTag.ftcPose.yaw);
         } else {
-            telemetry.addData("\n>","Drive using joysticks to find valid target\n");
+            telemetry.addData("\n>", "Drive using joysticks to find valid target\n");
         }
 
         ///////////////// FCD SETUP /////////////////
@@ -369,20 +224,20 @@ public class Sharko extends OpMode {
         backRightMotor.setPower(backRightPower);
 
         if (gamepad1.right_bumper && targetFound) {
-            double  rangeError      = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
-            double  headingError    = desiredTag.ftcPose.bearing;
-            double  yawError        = desiredTag.ftcPose.yaw;
+            double rangeError = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
+            double headingError = desiredTag.ftcPose.bearing;
+            double yawError = desiredTag.ftcPose.yaw;
 
-            drive  = -Range.clip(rangeError * Vision.SPEED_GAIN, -Vision.MAX_AUTO_SPEED, Vision.MAX_AUTO_SPEED);
-            turn   = Range.clip(headingError * Vision.TURN_GAIN, -Vision.MAX_AUTO_TURN, Vision.MAX_AUTO_TURN) ;
-            strafe = Range.clip(-yawError * Vision.STRAFE_GAIN, -Vision.MAX_AUTO_STRAFE, Vision.MAX_AUTO_STRAFE);
+            drive = -Range.clip(rangeError * SPEED_GAIN, -Vision.MAX_AUTO_SPEED, Vision.MAX_AUTO_SPEED);
+            turn = Range.clip(headingError * TURN_GAIN, -Vision.MAX_AUTO_TURN, Vision.MAX_AUTO_TURN);
+            strafe = Range.clip(-yawError * STRAFE_GAIN, -Vision.MAX_AUTO_STRAFE, Vision.MAX_AUTO_STRAFE);
 
-            telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+            telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
 
-            double leftFrontPower =  drive - strafe - turn;
-            double rightFrontPower =  drive + strafe + turn;
-            double leftBackPower  =  drive + strafe - turn;
-            double rightBackPower =  drive - strafe + turn;
+            double leftFrontPower = drive - strafe - turn;
+            double rightFrontPower = drive + strafe + turn;
+            double leftBackPower = drive + strafe - turn;
+            double rightBackPower = drive - strafe + turn;
 
             // Normalize wheel powers to be less than 1.0
             double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
@@ -407,10 +262,133 @@ public class Sharko extends OpMode {
         telemetry.addData("target", target);
         telemetry.update();
 
-
-
     }
 
+    private void armHandler() {
+        switch (state) {
+
+            case START:
+                target = Arm.LIFT_START;
+                setPivot(Arm.PIVOT_START);
+                pitchServo.setPosition(Arm.PITCH_START);
+
+                if (gamepad1.left_bumper) {
+                    eventTimer.reset();
+                    state = armStates.COLLECT;
+                }
+
+                break;
+
+            case COLLECT:
+
+                setPivot(Arm.PIVOT_COLLECT);
+                pitchServo.setPosition(Arm.PITCH_COLLECT);
+
+                if (eventTimer.time() >= 1 && (update == false)) {
+                    claw.setPosition(Arm.OPEN);
+                    update = true;
+                }
+
+                if (gamepad1.a) {
+                    claw.setPosition(Arm.CLOSE);
+                }
+
+                if (gamepad1.b) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad1.x) {
+                    eventTimer.reset();
+                    state = armStates.STORE;
+                }
+
+                break;
+
+            case STORE:
+
+                setPivot(Arm.PIVOT_STORE);
+                pitchServo.setPosition(Arm.PITCH_START);
+
+
+                if (gamepad1.dpad_down) {
+                    eventTimer.reset();
+                    state = armStates.LOW;
+                }
+
+                if (gamepad1.dpad_left) {
+                    eventTimer.reset();
+                    state = armStates.MID;
+                }
+
+                if (gamepad1.dpad_up) {
+                    eventTimer.reset();
+                    state = armStates.HIGH;
+                }
+
+                if (gamepad1.back) {
+                    eventTimer.reset();
+                    state = armStates.START;
+                }
+
+                break;
+
+
+            case LOW:
+
+                setPivot(Arm.PIVOT_SCORE);
+                pitchServo.setPosition(Arm.PITCH_SCORE);
+
+                if (gamepad1.a) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad1.dpad_right) {
+                    eventTimer.reset();
+                    claw.setPosition(Arm.CLOSE);
+                    state = armStates.START;
+                }
+
+                break;
+
+            case MID:
+                setPivot(Arm.PIVOT_SCORE);
+                pitchServo.setPosition(Arm.PITCH_SCORE);
+
+                target = Arm.LIFT_MID;
+
+                if (gamepad1.a) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad1.dpad_right) {
+                    eventTimer.reset();
+                    claw.setPosition(Arm.CLOSE);
+                    state = armStates.START;
+                }
+                break;
+
+            case HIGH:
+                setPivot(Arm.PIVOT_SCORE);
+                pitchServo.setPosition(Arm.PITCH_SCORE);
+
+                target = Arm.LIFT_HIGH;
+
+                if (gamepad1.a) {
+                    claw.setPosition(Arm.OPEN);
+                }
+
+                if (gamepad1.dpad_right) {
+                    eventTimer.reset();
+                    claw.setPosition(Arm.CLOSE);
+                    state = armStates.START;
+                }
+
+                break;
+
+            default:
+                state = armStates.START;
+        }
+    }
 
     private void initAprilTag() {
         aprilTag = new AprilTagProcessor.Builder().build();
@@ -459,7 +437,7 @@ public class Sharko extends OpMode {
 
         }
         //TODO: Worthless cast, try removing
-        exposureControl.setExposure((long)exposureMS, TimeUnit.MILLISECONDS);
+        exposureControl.setExposure((long) exposureMS, TimeUnit.MILLISECONDS);
 
         GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
         gainControl.setGain(gain);

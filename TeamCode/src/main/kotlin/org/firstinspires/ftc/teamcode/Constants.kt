@@ -49,21 +49,22 @@ object Constants {
         const val ticksPer = 145.1 / 180
 
         //todo FIND ALL THESE FUCKING VALUES RAHH
-        const val PIVOT_START = 0.3
-        const val PIVOT_COLLECT = 0.3
-        const val PIVOT_STORE = 0.3
-        const val PIVOT_MID = 0.3
+        const val PIVOT_START = 0.25
+        const val PIVOT_COLLECT = 0.67
+        const val PIVOT_STORE = 0.25
+        const val PIVOT_SCORE = 0.5
+
 
         const val PITCH_START = 0.5
-        const val PITCH_STORE = 0.5;
-        const val PITCH_MID = 0.5;
-        const val PITCH_COLLECT = 0.5;
+        const val PITCH_STORE = 0.5
+        const val PITCH_SCORE = 0.77
+        const val PITCH_COLLECT = 0.93
 
         const val OPEN = 0.3
         const val CLOSE = 0.5
 
         const val LIFT_START = -50
-        const val LIFT_MID = -50
-        const val LIFT_MAX = -550
+        const val LIFT_MID = -200
+        const val LIFT_HIGH = -500
     }
 }
