@@ -68,7 +68,6 @@ public class LiftTest extends OpMode {
         telemetry.addData("br", LIFT_2.getCurrentPosition());
         telemetry.addData("target", target);
         telemetry.update();
-
     }
 
     public void setPivot(double leftPos, double rightPos) {

@@ -204,58 +204,14 @@ public class Sharko extends OpMode {
             imu.zeroYaw();
         }
 
-        double botHeading = Math.toRadians(imu.getYaw());
-
-        // Rotate the movement direction counter to the bot's rotation
-        double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
-        double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
-
-        rotX = rotX * 1.1;  // Counteract imperfect strafing
-
-        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
-        double frontLeftPower = (rotY + rotX + rx) / denominator;
-        double backLeftPower = (rotY - rotX + rx) / denominator;
-        double frontRightPower = (rotY - rotX - rx) / denominator;
-        double backRightPower = (rotY + rotX - rx) / denominator;
-
-        frontLeftMotor.setPower(frontLeftPower);
-        backLeftMotor.setPower(backLeftPower);
-        frontRightMotor.setPower(frontRightPower);
-        backRightMotor.setPower(backRightPower);
+        drive(y, x, rx);
 
         if (gamepad1.right_bumper && targetFound) {
             double rangeError = (desiredTag.ftcPose.range - Vision.DESIRED_DISTANCE);
             double headingError = desiredTag.ftcPose.bearing;
             double yawError = desiredTag.ftcPose.yaw;
 
-            drive = -Range.clip(rangeError * SPEED_GAIN, -Vision.MAX_AUTO_SPEED, Vision.MAX_AUTO_SPEED);
-            turn = Range.clip(headingError * TURN_GAIN, -Vision.MAX_AUTO_TURN, Vision.MAX_AUTO_TURN);
-            strafe = Range.clip(-yawError * STRAFE_GAIN, -Vision.MAX_AUTO_STRAFE, Vision.MAX_AUTO_STRAFE);
-
-            telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
-
-            double leftFrontPower = drive - strafe - turn;
-            double rightFrontPower = drive + strafe + turn;
-            double leftBackPower = drive + strafe - turn;
-            double rightBackPower = drive - strafe + turn;
-
-            // Normalize wheel powers to be less than 1.0
-            double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-            max = Math.max(max, Math.abs(leftBackPower));
-            max = Math.max(max, Math.abs(rightBackPower));
-
-            if (max > 1.0) {
-                leftFrontPower /= max;
-                rightFrontPower /= max;
-                leftBackPower /= max;
-                rightBackPower /= max;
-            }
-
-            // Send powers to the wheels.
-            frontLeftMotor.setPower(leftFrontPower);
-            frontRightMotor.setPower(rightFrontPower);
-            backLeftMotor.setPower(leftBackPower);
-            backRightMotor.setPower(rightBackPower);
+            driveToTag(rangeError, headingError, yawError);
         }
 
         telemetry.addData("current pos", pos);
@@ -390,6 +346,28 @@ public class Sharko extends OpMode {
         }
     }
 
+    public void drive(double y, double x, double rx) {
+
+        double botHeading = Math.toRadians(imu.getYaw());
+
+        // Rotate the movement direction counter to the bot's rotation
+        double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+        double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+
+        rotX = rotX * 1.1;  // Counteract imperfect strafing
+
+        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+        double frontLeftPower = (rotY + rotX + rx) / denominator;
+        double backLeftPower = (rotY - rotX + rx) / denominator;
+        double frontRightPower = (rotY - rotX - rx) / denominator;
+        double backRightPower = (rotY + rotX - rx) / denominator;
+
+        frontLeftMotor.setPower(frontLeftPower);
+        backLeftMotor.setPower(backLeftPower);
+        frontRightMotor.setPower(frontRightPower);
+        backRightMotor.setPower(backRightPower);
+    }
+
     private void initAprilTag() {
         aprilTag = new AprilTagProcessor.Builder().build();
 
@@ -414,6 +392,37 @@ public class Sharko extends OpMode {
                     .addProcessor(aprilTag)
                     .build();
         }
+    }
+
+    private void driveToTag(double rangeError, double headingError, double yawError) {
+        drive = -Range.clip(rangeError * SPEED_GAIN, -Vision.MAX_AUTO_SPEED, Vision.MAX_AUTO_SPEED);
+        turn = Range.clip(headingError * TURN_GAIN, -Vision.MAX_AUTO_TURN, Vision.MAX_AUTO_TURN);
+        strafe = Range.clip(-yawError * STRAFE_GAIN, -Vision.MAX_AUTO_STRAFE, Vision.MAX_AUTO_STRAFE);
+
+        telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+
+        double leftFrontPower = drive - strafe - turn;
+        double rightFrontPower = drive + strafe + turn;
+        double leftBackPower = drive + strafe - turn;
+        double rightBackPower = drive - strafe + turn;
+
+        // Normalize wheel powers to be less than 1.0
+        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+        max = Math.max(max, Math.abs(leftBackPower));
+        max = Math.max(max, Math.abs(rightBackPower));
+
+        if (max > 1.0) {
+            leftFrontPower /= max;
+            rightFrontPower /= max;
+            leftBackPower /= max;
+            rightBackPower /= max;
+        }
+
+        // Send powers to the wheels.
+        frontLeftMotor.setPower(leftFrontPower);
+        frontRightMotor.setPower(rightFrontPower);
+        backLeftMotor.setPower(leftBackPower);
+        backRightMotor.setPower(rightBackPower);
     }
 
     private void setManualExposure(int exposureMS, int gain) throws InterruptedException {
